@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Multi Party Computation Model</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&family=Lora:ital,wght@0,400;1,400;1,600&display=swap');
+:root{--bg:#faf7f2;--surface:#fff;--surface2:#f3efe8;--border:#e0d9ce;--ink:#1a1612;--muted:#9a9080;--alice-c:#c45c3a;--bob-c:#3a6ec4;--you-c:#7a3ac4;--gold:#c49a3a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Syne',sans-serif;min-height:100vh;padding:36px 20px 80px;}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle at 15% 15%,rgba(196,92,58,.07) 0%,transparent 50%),radial-gradient(circle at 85% 85%,rgba(58,110,196,.07) 0%,transparent 50%);pointer-events:none;}
+.app{max-width:800px;margin:0 auto;}
+.screen{display:none;animation:fadeUp .35s ease;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.top-bar{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:30px;}
+.top-bar-title{font-size:13px;font-weight:700;letter-spacing:.04em;}
+.mode-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-family:'Syne Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.mode-badge.demo{background:var(--ink);color:#fff;}
+.mode-badge.try{background:var(--you-c);color:#fff;}
+.story{background:var(--ink);color:var(--bg);border-radius:16px;padding:22px 26px;margin-bottom:26px;position:relative;overflow:hidden;}
+.story::after{content:'💍';position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:48px;opacity:.1;}
+.story-eye{font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.15em;color:#666;text-transform:uppercase;margin-bottom:8px;}
+.story p{font-family:'Lora',serif;font-style:italic;font-size:14px;line-height:1.8;color:#bbb;max-width:520px;}
+.story p strong{color:#fff;font-style:normal;}
+.steps{display:flex;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:30px;}
+.si{flex:1;padding:11px 8px;text-align:center;border-right:1px solid var(--border);transition:background .3s;}
+.si:last-child{border-right:none;}
+.si-num{font-family:'Syne Mono',monospace;font-size:16px;font-weight:700;color:var(--border);line-height:1;margin-bottom:3px;transition:color .3s;}
+.si-lbl{font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;}
+.si.active{background:var(--ink);}
+.si.active .si-num{color:#fff;}
+.si.active .si-lbl{color:#999;}
+.si.done{background:var(--surface2);}
+.si.done .si-num{color:var(--alice-c);}
+.phase{display:none;}
+.phase.active{display:block;animation:fadeUp .3s ease;}
+.phase-title{font-size:20px;font-weight:800;letter-spacing:-.01em;margin-bottom:6px;}
+.phase-desc{font-family:'Lora',serif;font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:560px;}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+@media(max-width:560px){.pgrid{grid-template-columns:1fr;}}
+.pcard{border:2px solid var(--border);border-radius:14px;padding:15px 13px;background:var(--surface);transition:border-color .2s,box-shadow .2s;}
+.pcard.alice{--pc:var(--alice-c);}
+.pcard.bob{--pc:var(--bob-c);}
+.pcard.you{--pc:var(--you-c);}
+.pcard.active{border-color:var(--pc);box-shadow:0 0 0 3px color-mix(in srgb,var(--pc) 12%,transparent);}
+.pcard-head{display:flex;align-items:center;gap:9px;margin-bottom:11px;}
+.pcard-av{width:33px;height:33px;border-radius:50%;background:color-mix(in srgb,var(--pc) 14%,var(--bg));border:2px solid var(--pc);display:flex;align-items:center;justify-content:center;font-size:15px;}
+.pcard-name{font-size:14px;font-weight:700;}
+.sc-lbl{font-family:'Syne Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:7px;text-transform:uppercase;}
+.sc-btns{display:flex;gap:4px;flex-wrap:wrap;}
+.sbtn{width:29px;height:29px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Syne Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .12s;display:flex;align-items:center;justify-content:center;}
+.sbtn:hover{border-color:var(--pc);color:var(--pc);}
+.sbtn.sel{background:var(--pc);border-color:var(--pc);color:#fff;}
+.mbox{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'Syne Mono',monospace;font-size:12px;line-height:1.9;color:var(--muted);margin-top:8px;}
+.mbox .hl{color:var(--pc);font-weight:600;}
+.mbox .hl2{color:var(--ink);font-weight:600;}
+.spin-row{display:flex;align-items:center;gap:9px;margin-bottom:6px;margin-top:8px;}
+.spin-btn{padding:6px 11px;border-radius:8px;border:2px solid var(--pc);background:transparent;color:var(--pc);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.spin-btn:hover{background:color-mix(in srgb,var(--pc) 12%,transparent);}
+.spin-btn:disabled{opacity:.28;cursor:not-allowed;background:transparent;}
+.spin-val{font-family:'Syne Mono',monospace;font-size:15px;font-weight:700;color:var(--pc);min-width:64px;text-align:center;}
+.spin-val.pop{animation:pop .25s ease;}
+@keyframes pop{0%{transform:scale(.7);opacity:.3}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.ibox{border-left:3px solid var(--gold);background:color-mix(in srgb,var(--gold) 8%,var(--bg));padding:10px 13px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.65;color:#666;margin:12px 0;}
+.ibox strong{color:var(--ink);}
+.stbl{width:100%;border-collapse:collapse;font-family:'Syne Mono',monospace;font-size:12px;margin:16px 0;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.stbl th{background:var(--ink);color:#fff;padding:9px 11px;text-align:left;font-size:10px;letter-spacing:.07em;font-weight:600;}
+.stbl td{padding:8px 11px;border-bottom:1px solid var(--border);background:var(--surface);}
+.stbl tr:last-child td{border-bottom:none;}
+.stbl .sum-row td{background:var(--surface2);font-weight:700;color:var(--ink);}
+.result-wrap{text-align:center;padding:34px 20px;background:var(--ink);border-radius:20px;margin-top:12px;position:relative;overflow:hidden;}
+.result-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 110%,rgba(196,154,58,.22),transparent 55%);pointer-events:none;}
+.res-emoji{font-size:54px;margin-bottom:10px;display:block;}
+.res-avg{font-size:68px;font-weight:800;color:var(--gold);line-height:1;margin-bottom:4px;letter-spacing:-.03em;}
+.res-avg-lbl{font-family:'Syne Mono',monospace;font-size:10px;color:#666;letter-spacing:.15em;text-transform:uppercase;margin-bottom:15px;}
+.res-verdict{font-family:'Lora',serif;font-size:18px;font-style:italic;color:#fff;margin-bottom:8px;}
+.res-detail{font-size:13px;color:#777;line-height:1.65;max-width:400px;margin:0 auto 20px;}
+.priv-box{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;text-align:left;font-family:'Syne Mono',monospace;font-size:11px;line-height:2;color:#666;max-width:440px;margin:0 auto;}
+.priv-box .pb-t{color:var(--gold);font-size:9px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px;}
+.priv-box .hl{color:#bbb;}
+.transition-card{background:var(--ink);color:#fff;border-radius:20px;padding:36px 28px;text-align:center;margin-top:24px;position:relative;overflow:hidden;}
+.transition-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,color-mix(in srgb,var(--you-c) 18%,transparent),transparent 60%);pointer-events:none;}
+.tc-eye{font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.15em;color:#666;text-transform:uppercase;margin-bottom:12px;}
+.tc-title{font-size:28px;font-weight:800;margin-bottom:10px;}
+.tc-title span{color:color-mix(in srgb,var(--you-c) 80%,#fff);}
+.tc-body{font-family:'Lora',serif;font-style:italic;font-size:14px;color:#aaa;line-height:1.75;max-width:440px;margin:0 auto 24px;}
+.waiting-wrap{text-align:center;padding:50px 20px;}
+.waiting-title{font-size:22px;font-weight:800;margin-bottom:10px;}
+.waiting-sub{font-family:'Lora',serif;font-style:italic;font-size:14px;color:var(--muted);margin-bottom:36px;}
+.dots-row{display:flex;justify-content:center;gap:32px;margin-bottom:36px;}
+.dot-person{text-align:center;}
+.dot-av{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 8px;border:2px solid var(--border);animation:pulse 1.4s ease-in-out infinite;}
+.dot-av.a-av{border-color:var(--alice-c);animation-delay:0s;}
+.dot-av.b-av{border-color:var(--bob-c);animation-delay:.3s;}
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}
+.dot-lbl{font-family:'Syne Mono',monospace;font-size:11px;color:var(--muted);}
+.prog-wrap{max-width:300px;margin:0 auto;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.prog-bar{height:100%;background:var(--ink);border-radius:2px;width:0%;transition:width .1s linear;}
+.try-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0;}
+@media(max-width:560px){.try-grid{grid-template-columns:1fr;}}
+.tsc{border:2px solid var(--border);border-radius:14px;padding:15px 13px;background:var(--surface);text-align:center;}
+.tsc.yours{border-color:var(--you-c);background:color-mix(in srgb,var(--you-c) 6%,var(--surface));}
+.tsc.theirs{opacity:.5;}
+.tsc-lbl{font-family:'Syne Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em;margin-bottom:9px;text-transform:uppercase;}
+.tsc-val{font-family:'Syne Mono',monospace;font-size:20px;font-weight:700;margin-bottom:5px;}
+.tsc-note{font-size:11px;color:var(--muted);line-height:1.5;}
+.refl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px;}
+.refl-q{margin-bottom:22px;}
+.refl-q-label{font-size:14px;font-weight:700;margin-bottom:8px;}
+.refl-q-sub{font-size:12px;color:var(--muted);margin-bottom:9px;}
+.star-row{display:flex;gap:6px;}
+.star-btn{font-size:24px;cursor:pointer;background:none;border:none;padding:2px;transition:transform .1s;filter:grayscale(1) opacity(.4);}
+.star-btn.lit{filter:none;transform:scale(1.1);}
+.bin-row{display:flex;gap:9px;flex-wrap:wrap;}
+.bin-btn{padding:8px 18px;border-radius:9px;border:2px solid var(--border);background:var(--surface2);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;color:var(--muted);}
+.bin-btn:hover{border-color:var(--ink);color:var(--ink);}
+.bin-btn.sel{background:var(--ink);border-color:var(--ink);color:#fff;}
+.check-row{display:flex;flex-direction:column;gap:7px;}
+.check-item{display:flex;align-items:flex-start;gap:9px;padding:9px 13px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .15s;font-size:13px;color:var(--muted);}
+.check-item:hover{border-color:var(--you-c);color:var(--ink);}
+.check-item.sel{border-color:var(--you-c);background:color-mix(in srgb,var(--you-c) 8%,var(--surface));color:var(--ink);}
+.check-box{width:17px;height:17px;border-radius:4px;border:2px solid var(--border);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s;}
+.check-item.sel .check-box{background:var(--you-c);border-color:var(--you-c);color:#fff;}
+.refl-ta{width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Lora',serif;font-size:14px;color:var(--ink);resize:vertical;min-height:75px;line-height:1.6;transition:border-color .2s;}
+.refl-ta:focus{outline:none;border-color:var(--you-c);}
+.refl-ta::placeholder{color:var(--muted);font-style:italic;}
+.ty-wrap{text-align:center;padding:46px 22px;}
+.ty-big{font-size:60px;margin-bottom:14px;}
+.ty-title{font-size:26px;font-weight:800;margin-bottom:10px;}
+.ty-sub{font-family:'Lora',serif;font-style:italic;font-size:14px;color:var(--muted);line-height:1.7;max-width:420px;margin:0 auto 28px;}
+.ty-summary{background:var(--ink);border-radius:16px;padding:22px;text-align:left;max-width:420px;margin:0 auto;font-family:'Syne Mono',monospace;font-size:12px;line-height:2;color:#777;}
+.ty-summary .tys-t{color:var(--gold);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px;}
+.ty-summary .hl{color:#ccc;font-weight:600;}
+.btn{padding:11px 24px;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:all .18s;border:none;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover:not(:disabled){background:#333;transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.14);}
+.btn-primary:disabled{opacity:.28;cursor:not-allowed;}
+.btn-you{background:var(--you-c);color:#fff;}
+.btn-you:hover:not(:disabled){background:#6a2ab4;transform:translateY(-2px);}
+.btn-you:disabled{opacity:.28;cursor:not-allowed;}
+.btn-ghost{background:transparent;border:2px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--ink);color:var(--ink);}
+.btn-row{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin-top:24px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SCREEN: DEMO -->
+<div id="screen-demo" class="screen active">
+  <div class="top-bar">
+    <div class="top-bar-title">Secure Multi Party Computation Model</div>
+    <span class="mode-badge demo">Demo</span>
+  </div>
+
+  <!-- MPC INTRO -->
+  <div style="margin-bottom:20px;padding:18px 22px;border:1px solid var(--border);border-radius:14px;background:var(--surface);">
+    <div style="font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Intro to MPC</div>
+    <p style="font-family:'Lora',serif;font-size:14px;line-height:1.75;color:var(--ink);">
+      <strong>Secure Multiparty Computation (MPC)</strong> allows multiple parties to jointly compute a result over their private inputs — without anyone revealing their individual data to the others.
+      In this demo, you will see how three friends can calculate an honest average score while keeping each person's rating completely secret.
+    </p>
+  </div>
+
+  <div class="story">
+    <div class="story-eye">The Scenario</div>
+    <p><strong>Maria</strong> is getting married in a week and just got a new hairstyle. She asks her friends <strong>Alice, Bob, and Lisa</strong> to rate it honestly from 1 to 5. She needs honest opinions, but she is scared that if each friend tells her their opinion directly, they will overestimate their score because of friendship pressure. At the same time, she does not want her friends to discuss her appearance and share their scores with each other. That is why she applies the <strong>MPC protocol</strong> — to reveal the average score for her hairstyle so that no individual knows the scores of others.</p>
+  </div>
+
+  <div class="steps">
+    <div class="si active" id="dsi-0"><div class="si-num">01</div><div class="si-lbl">Score</div></div>
+    <div class="si" id="dsi-1"><div class="si-num">02</div><div class="si-lbl">Split</div></div>
+    <div class="si" id="dsi-2"><div class="si-num">03</div><div class="si-lbl">Share</div></div>
+    <div class="si" id="dsi-3"><div class="si-num">04</div><div class="si-lbl">Reveal</div></div>
+  </div>
+
+  <!-- D0: scores -->
+  <div id="dp-0" class="phase active">
+    <div class="phase-title">Step 1 — Each friend picks a secret score</div>
+    <p class="phase-desc">Try to evaluate the hairstyle from each friend's perspective — but remember, it is a secret score that no one shares with others.</p>
+    <div class="pgrid">
+      <div class="pcard alice" id="dpc-alice"><div class="pcard-head"><div class="pcard-name">Alice</div></div><div class="sc-lbl">Rating</div><div class="sc-btns" id="dsb-alice"></div><div class="mbox" id="dch-alice" style="display:none">Chosen: <span class="hl" id="dcv-alice">—</span> / 5</div></div>
+      <div class="pcard bob" id="dpc-bob"><div class="pcard-head"><div class="pcard-name">Bob</div></div><div class="sc-lbl">Rating</div><div class="sc-btns" id="dsb-bob"></div><div class="mbox" id="dch-bob" style="display:none">Chosen: <span class="hl" id="dcv-bob">—</span> / 5</div></div>
+      <div class="pcard you" id="dpc-carol"><div class="pcard-head"><div class="pcard-name">Lisa</div></div><div class="sc-lbl">Rating</div><div class="sc-btns" id="dsb-carol"></div><div class="mbox" id="dch-carol" style="display:none">Chosen: <span class="hl" id="dcv-carol">—</span> / 5</div></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" id="dbtn-0" disabled onclick="demoGo(1)">Next step →</button></div>
+  </div>
+
+  <!-- D1: split -->
+  <div id="dp-1" class="phase">
+    <div class="phase-title">Step 2 — Split each score into 3 random fragments</div>
+    <p class="phase-desc">Spin twice (−1000 to 1000). Fragment₃ = score − r₁ − r₂. All three sum back to the original score. Alone, each fragment is pure noise.</p>
+    <div class="ibox"><strong>Math:</strong> Frag₁ + Frag₂ + Frag₃ = score ✓</div>
+    <div class="pgrid">
+      <div class="pcard alice">
+        <div class="pcard-head"><div class="pcard-name">Alice</div></div>
+        <div class="mbox">Score: <span class="hl" id="dss-alice">—</span></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp1-alice" onclick="doSpin('d','alice',1)">⟳ Spin 1</button><div class="spin-val" id="dsv1-alice">—</div></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp2-alice" onclick="doSpin('d','alice',2)" disabled>⟳ Spin 2</button><div class="spin-val" id="dsv2-alice">—</div></div>
+        <div class="mbox" id="dshb-alice" style="display:none;margin-top:8px;line-height:2">F₁=<span class="hl" id="df1-alice">—</span> F₂=<span class="hl" id="df2-alice">—</span> F₃=<span class="hl" id="df3-alice">—</span><br><span class="hl2" style="font-size:11px" id="dchk-alice"></span></div>
+      </div>
+      <div class="pcard bob">
+        <div class="pcard-head"><div class="pcard-name">Bob</div></div>
+        <div class="mbox">Score: <span class="hl" id="dss-bob">—</span></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp1-bob" onclick="doSpin('d','bob',1)">⟳ Spin 1</button><div class="spin-val" id="dsv1-bob">—</div></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp2-bob" onclick="doSpin('d','bob',2)" disabled>⟳ Spin 2</button><div class="spin-val" id="dsv2-bob">—</div></div>
+        <div class="mbox" id="dshb-bob" style="display:none;margin-top:8px;line-height:2">F₁=<span class="hl" id="df1-bob">—</span> F₂=<span class="hl" id="df2-bob">—</span> F₃=<span class="hl" id="df3-bob">—</span><br><span class="hl2" style="font-size:11px" id="dchk-bob"></span></div>
+      </div>
+      <div class="pcard you">
+        <div class="pcard-head"><div class="pcard-name">Lisa</div></div>
+        <div class="mbox">Score: <span class="hl" id="dss-carol">—</span></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp1-carol" onclick="doSpin('d','carol',1)">⟳ Spin 1</button><div class="spin-val" id="dsv1-carol">—</div></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp2-carol" onclick="doSpin('d','carol',2)" disabled>⟳ Spin 2</button><div class="spin-val" id="dsv2-carol">—</div></div>
+        <div class="mbox" id="dshb-carol" style="display:none;margin-top:8px;line-height:2">F₁=<span class="hl" id="df1-carol">—</span> F₂=<span class="hl" id="df2-carol">—</span> F₃=<span class="hl" id="df3-carol">—</span><br><span class="hl2" style="font-size:11px" id="dchk-carol"></span></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="demoGo(0)">← Back</button>
+      <button class="btn btn-primary" id="dbtn-1" disabled onclick="demoGo(2)">All splits done → Share ↓</button>
+    </div>
+  </div>
+
+  <!-- D2: share table -->
+  <div id="dp-2" class="phase">
+    <div class="phase-title">Step 3 — Each person collects one fragment from everyone</div>
+    <p class="phase-desc">Alice gets Frag₁ from each person and sums them. Bob gets Frag₂. Carol gets Frag₃. Each column sum looks completely random.</p>
+    <table class="stbl">
+      <thead><tr><th>Sends ↓ / Gets →</th><th style="color:#f0b49a">Alice (F₁)</th><th style="color:#9ab4f0">Bob (F₂)</th><th style="color:#c4a0f0">Lisa (F₃)</th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--alice-c);font-weight:700">From Alice</td><td id="dt-aa">—</td><td id="dt-ab">—</td><td id="dt-ac">—</td></tr>
+        <tr><td style="color:var(--bob-c);font-weight:700">From Bob</td><td id="dt-ba">—</td><td id="dt-bb">—</td><td id="dt-bc">—</td></tr>
+        <tr><td style="color:var(--you-c);font-weight:700">From Lisa</td><td id="dt-ca">—</td><td id="dt-cb">—</td><td id="dt-cc">—</td></tr>
+        <tr class="sum-row"><td>Column Sum</td><td id="dt-sa">—</td><td id="dt-sb">—</td><td id="dt-sc">—</td></tr>
+      </tbody>
+    </table>
+    <div class="mbox" style="font-size:13px;line-height:2.3">
+      Alice announces: <span style="color:var(--alice-c);font-weight:700" id="dpub-a">—</span><br>
+      Bob announces: <span style="color:var(--bob-c);font-weight:700" id="dpub-b">—</span><br>
+      Lisa announces: <span style="color:var(--you-c);font-weight:700" id="dpub-c">—</span><br>
+      <span style="color:var(--ink);font-weight:700" id="dpub-tot">Grand total = —</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="demoGo(1)">← Back</button>
+      <button class="btn btn-primary" onclick="demoGo(3)">See Maria's result ↓</button>
+    </div>
+  </div>
+
+  <!-- D3: result + transition -->
+  <div id="dp-3" class="phase">
+    <div class="phase-title">Diana sees only the average</div>
+    <p class="phase-desc">Grand total ÷ 3 gives an honest average. No individual score was revealed.</p>
+    <div class="result-wrap">
+      <span class="res-emoji" id="dres-e">✨</span>
+      <div class="res-avg" id="dres-avg">—</div>
+      <div class="res-avg-lbl">Average score out of 5</div>
+      <div class="res-verdict" id="dres-v">—</div>
+      <div class="res-detail" id="dres-d">—</div>
+      <div class="priv-box"><div class="pb-t">🔒 Privacy Proof</div><div id="dpriv">—</div></div>
+    </div>
+    <div class="transition-card">
+      <div class="tc-eye">Up next</div>
+      <div class="tc-title">Now it's <span>your turn</span></div>
+      <div class="tc-body">You just watched the full protocol. Now experience it yourself — pick your own score, spin your own randomizer, and see exactly what you share with Alice and Bob (and what stays hidden).</div>
+      <button class="btn btn-you" onclick="startTry()">Try it yourself →</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="demoGo(2)">← Back</button>
+      <button class="btn btn-ghost" onclick="resetDemo()">↺ Redo demo</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: TRY SCORE -->
+<div id="screen-try-score" class="screen">
+  <div class="top-bar"><div class="top-bar-title">Secure Multi Party Computation Model</div><span class="mode-badge try">Try Yourself</span></div>
+  <div class="steps">
+    <div class="si active"><div class="si-num">01</div><div class="si-lbl">Your Score</div></div>
+    <div class="si"><div class="si-num">02</div><div class="si-lbl">Your Split</div></div>
+    <div class="si"><div class="si-num">03</div><div class="si-lbl">Sharing</div></div>
+    <div class="si"><div class="si-num">04</div><div class="si-lbl">Result</div></div>
+  </div>
+  <div class="phase-title">What's your honest rating?</div>
+  <p class="phase-desc" style="margin-bottom:26px">You are one of Diana's three friends. Rate her hairstyle from 0 to 5. Your score stays secret — nobody will ever see this number directly.</p>
+  <div style="max-width:320px;margin:0 auto;">
+    <div class="pcard you active" style="--pc:var(--you-c)">
+      <div class="pcard-head"><div class="pcard-av">🫵</div><div class="pcard-name">You</div></div>
+      <div class="sc-lbl">Your rating for Diana's hairstyle</div>
+      <div class="sc-btns" id="tsb-you" style="justify-content:center"></div>
+      <div class="mbox" id="tch-you" style="display:none;text-align:center">Your secret score: <span style="color:var(--you-c);font-weight:700" id="tcv-you">—</span> / 5</div>
+    </div>
+  </div>
+  <div class="ibox" style="margin-top:18px"><strong>Be honest!</strong> The whole point of MPC is that you can give a genuine rating without anyone judging you. Alice and Bob will never see your number.</div>
+  <div class="btn-row"><button class="btn btn-you" id="tbtn-score" disabled onclick="tryGoSplit()">Lock in my score → Split it ↓</button></div>
+</div>
+
+<!-- SCREEN: TRY SPLIT -->
+<div id="screen-try-split" class="screen">
+  <div class="top-bar"><div class="top-bar-title">Secure Multi Party Computation Model</div><span class="mode-badge try">Try Yourself</span></div>
+  <div class="steps">
+    <div class="si done"><div class="si-num">01</div><div class="si-lbl">Your Score</div></div>
+    <div class="si active"><div class="si-num">02</div><div class="si-lbl">Your Split</div></div>
+    <div class="si"><div class="si-num">03</div><div class="si-lbl">Sharing</div></div>
+    <div class="si"><div class="si-num">04</div><div class="si-lbl">Result</div></div>
+  </div>
+  <div class="phase-title">Split your score into 3 fragments</div>
+  <p class="phase-desc">Spin the randomizer twice. You'll get two wild random numbers. Fragment₃ is computed so all three sum to your score.</p>
+  <div style="max-width:340px;margin:0 auto;">
+    <div class="pcard you active" style="--pc:var(--you-c)">
+      <div class="pcard-head"><div class="pcard-av">🫵</div><div class="pcard-name">You</div></div>
+      <div class="mbox">Your secret score: <span style="color:var(--you-c);font-weight:700" id="try-ss">—</span></div>
+      <div class="spin-row"><button class="spin-btn" id="tsp1" style="--pc:var(--you-c)" onclick="doSpin('t','you',1)">⟳ Spin 1</button><div class="spin-val" id="tsv1" style="color:var(--you-c)">—</div></div>
+      <div class="spin-row"><button class="spin-btn" id="tsp2" style="--pc:var(--you-c)" onclick="doSpin('t','you',2)" disabled>⟳ Spin 2</button><div class="spin-val" id="tsv2" style="color:var(--you-c)">—</div></div>
+      <div class="mbox" id="tshb" style="display:none;margin-top:8px;line-height:2.1">
+        Fragment₁ = <span style="color:var(--you-c);font-weight:700" id="tf1">—</span><br>
+        Fragment₂ = <span style="color:var(--you-c);font-weight:700" id="tf2">—</span><br>
+        Fragment₃ = <span style="color:var(--you-c);font-weight:700" id="tf3">—</span><br>
+        <span style="color:var(--ink);font-weight:700;font-size:11px" id="tchk"></span>
+      </div>
+    </div>
+  </div>
+  <div class="ibox" style="margin-top:18px"><strong>Notice how large those numbers are.</strong> Even if Alice or Bob see one of your fragments, they have no idea whether your real score was 0, 3, or 5.</div>
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="showScreen('screen-try-score')">← Back</button>
+    <button class="btn btn-you" id="tbtn-split" disabled onclick="tryGoWaiting()">Send fragments to Alice &amp; Bob →</button>
+  </div>
+</div>
+
+<!-- SCREEN: WAITING -->
+<div id="screen-waiting" class="screen">
+  <div class="top-bar"><div class="top-bar-title">Secure Multi Party Computation Model</div><span class="mode-badge try">Try Yourself</span></div>
+  <div class="steps">
+    <div class="si done"><div class="si-num">01</div><div class="si-lbl">Your Score</div></div>
+    <div class="si done"><div class="si-num">02</div><div class="si-lbl">Your Split</div></div>
+    <div class="si active"><div class="si-num">03</div><div class="si-lbl">Sharing</div></div>
+    <div class="si"><div class="si-num">04</div><div class="si-lbl">Result</div></div>
+  </div>
+  <div class="waiting-wrap">
+    <div class="waiting-title">Waiting for Alice and Bob...</div>
+    <p class="waiting-sub">They're generating their own random fragments right now. You can't see their scores or splits — and they can't see yours.</p>
+    <div class="dots-row">
+      <div class="dot-person"><div class="dot-av a-av">🌸</div><div class="dot-lbl" id="wlbl-a">Spinning...</div></div>
+      <div class="dot-person"><div class="dot-av b-av">🎸</div><div class="dot-lbl" id="wlbl-b">Spinning...</div></div>
+    </div>
+    <div class="prog-wrap"><div class="prog-bar" id="wprog"></div></div>
+  </div>
+</div>
+
+<!-- SCREEN: TRY SHARE -->
+<div id="screen-try-share" class="screen">
+  <div class="top-bar"><div class="top-bar-title">Secure Multi Party Computation Model</div><span class="mode-badge try">Try Yourself</span></div>
+  <div class="steps">
+    <div class="si done"><div class="si-num">01</div><div class="si-lbl">Your Score</div></div>
+    <div class="si done"><div class="si-num">02</div><div class="si-lbl">Your Split</div></div>
+    <div class="si active"><div class="si-num">03</div><div class="si-lbl">Sharing</div></div>
+    <div class="si"><div class="si-num">04</div><div class="si-lbl">Result</div></div>
+  </div>
+  <div class="phase-title">What you see — and what you don't</div>
+  <p class="phase-desc">You receive one fragment from Alice, one from Bob, and keep one of your own. You sum them and announce your column total. Alice and Bob do the same — but you never see their columns.</p>
+  <div class="try-grid">
+    <div class="tsc"><div class="tsc-lbl">From Alice</div><div class="tsc-val" style="color:var(--alice-c)" id="tsh-fa">—</div><div class="tsc-note">Alice's Frag₃ sent to you</div></div>
+    <div class="tsc"><div class="tsc-lbl">From Bob</div><div class="tsc-val" style="color:var(--bob-c)" id="tsh-fb">—</div><div class="tsc-note">Bob's Frag₃ sent to you</div></div>
+    <div class="tsc yours"><div class="tsc-lbl">Your own fragment</div><div class="tsc-val" style="color:var(--you-c)" id="tsh-fy">—</div><div class="tsc-note">Your Frag₃ (you keep this)</div></div>
+  </div>
+  <div class="mbox" style="font-size:13px;line-height:2.4;max-width:380px;margin:0 auto">
+    Your column sum: <span style="color:var(--you-c);font-weight:700" id="tsh-cs">—</span><br>
+    <span style="font-size:11px;color:var(--muted)" id="tsh-cm"></span>
+  </div>
+  <div class="ibox" style="margin-top:14px"><strong>What Alice and Bob see:</strong> Each of them also has three fragments from different people adding to a column sum. Nobody can reconstruct anyone's score from one column alone.</div>
+  <div class="try-grid" style="margin-top:18px">
+    <div class="tsc theirs"><div class="tsc-lbl">Alice's column</div><div class="tsc-val" style="color:var(--alice-c)">???</div><div class="tsc-note">Three fragments you can't see</div></div>
+    <div class="tsc theirs"><div class="tsc-lbl">Bob's column</div><div class="tsc-val" style="color:var(--bob-c)">???</div><div class="tsc-note">Three fragments you can't see</div></div>
+    <div class="tsc yours"><div class="tsc-lbl">Your column sum</div><div class="tsc-val" style="color:var(--you-c);font-size:26px" id="tsh-cs2">—</div><div class="tsc-note">This is all you announce publicly</div></div>
+  </div>
+  <div class="btn-row"><button class="btn btn-you" onclick="tryGoResult()">Add everything up → See the average ↓</button></div>
+</div>
+
+<!-- SCREEN: TRY RESULT -->
+<div id="screen-try-result" class="screen">
+  <div class="top-bar"><div class="top-bar-title">Secure Multi Party Computation Model</div><span class="mode-badge try">Try Yourself</span></div>
+  <div class="steps">
+    <div class="si done"><div class="si-num">01</div><div class="si-lbl">Your Score</div></div>
+    <div class="si done"><div class="si-num">02</div><div class="si-lbl">Your Split</div></div>
+    <div class="si done"><div class="si-num">03</div><div class="si-lbl">Sharing</div></div>
+    <div class="si active"><div class="si-num">04</div><div class="si-lbl">Result</div></div>
+  </div>
+  <div class="phase-title">Maria's honest average</div>
+  <p class="phase-desc">The three column sums add up to the grand total. Divide by 3 — that's all Diana learns.</p>
+  <div class="result-wrap">
+    <span class="res-emoji" id="tres-e">✨</span>
+    <div class="res-avg" id="tres-avg">—</div>
+    <div class="res-avg-lbl">Average score out of 5</div>
+    <div class="res-verdict" id="tres-v">—</div>
+    <div class="res-detail" id="tres-d">—</div>
+    <div class="priv-box"><div class="pb-t">🔒 What was revealed</div><div id="tpriv">—</div></div>
+  </div>
+  <div class="btn-row"><button class="btn btn-you" onclick="window.open('URL_form','_blank')">Rate the MPC experience →</button></div>
+</div>
+
+<!-- SCREEN: REFLECTION -->
+<div id="screen-reflection" class="screen">
+  <div class="top-bar"><div class="top-bar-title">Secure Multi Party Computation Model</div><span class="mode-badge try">Reflection</span></div>
+  <div class="phase-title">How did it feel?</div>
+  <p class="phase-desc">You just experienced MPC firsthand. Help us understand how it landed.</p>
+  <div class="refl-wrap">
+    <div class="refl-q">
+      <div class="refl-q-label">1. How secure did you feel sharing your score this way?</div>
+      <div class="refl-q-sub">1 = Not secure at all &nbsp;·&nbsp; 5 = Completely secure</div>
+      <div class="star-row" id="q1-stars">
+        <button class="star-btn" onclick="pickStar(1)">⭐</button>
+        <button class="star-btn" onclick="pickStar(2)">⭐</button>
+        <button class="star-btn" onclick="pickStar(3)">⭐</button>
+        <button class="star-btn" onclick="pickStar(4)">⭐</button>
+        <button class="star-btn" onclick="pickStar(5)">⭐</button>
+      </div>
+    </div>
+    <div class="refl-q">
+      <div class="refl-q-label">2. Would you use an app built on this protocol in real life?</div>
+      <div class="bin-row">
+        <button class="bin-btn" id="q2-yes" onclick="pickBin('yes')">Yes, I'd trust it</button>
+        <button class="bin-btn" id="q2-maybe" onclick="pickBin('maybe')">Maybe, with more info</button>
+        <button class="bin-btn" id="q2-no" onclick="pickBin('no')">No, not comfortable</button>
+      </div>
+    </div>
+    <div class="refl-q">
+      <div class="refl-q-label">3. When you saw the fragment Alice and Bob sent you — did it feel risky?</div>
+      <div class="check-row">
+        <label class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div>No — the numbers were so large they gave nothing away</label>
+        <label class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div>Slightly — I wasn't sure if someone could guess from a fragment</label>
+        <label class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div>Yes — I felt like my score could be reverse-engineered</label>
+        <label class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div>I wasn't thinking about risk, I was focused on the math</label>
+      </div>
+    </div>
+    <div class="refl-q">
+      <div class="refl-q-label">4. What did you understand — or not understand — about the protocol?</div>
+      <textarea class="refl-ta" id="q4-text" placeholder="e.g. I understood why the fragments are random, but I'm not sure why the column sums are safe to announce..."></textarea>
+    </div>
+  </div>
+  <div class="btn-row"><button class="btn btn-you" onclick="submitReflection()">Submit my reflection →</button></div>
+</div>
+
+<!-- SCREEN: THANKS -->
+<div id="screen-thanks" class="screen">
+  <div class="top-bar"><div class="top-bar-title">Secure Multi Party Computation Model</div><span class="mode-badge demo">Complete</span></div>
+  <div class="ty-wrap">
+    <div class="ty-big">🎉</div>
+    <div class="ty-title">Thank you!</div>
+    <p class="ty-sub">You just completed a real MPC protocol — the actual mathematics behind privacy-preserving computation.</p>
+    <div class="ty-summary"><div class="tys-t">Your Session Summary</div><div id="ty-lines">—</div></div>
+  </div>
+  <div class="btn-row"><button class="btn btn-ghost" onclick="fullReset()">↺ Start over</button></div>
+</div>
+
+</div>
+<script>
+const PPLE=['alice','bob','carol'];
+const dSc={alice:null,bob:null,carol:null};
+const dR1={alice:null,bob:null,carol:null};
+const dR2={alice:null,bob:null,carol:null};
+const dFr={alice:{},bob:{},carol:{}};
+const T={youScore:null,youR1:null,youR2:null,youFr:{},aScore:null,aFr:{},bScore:null,bFr:{},refl:{stars:null,bin:null,checks:[],text:''}};
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
+
+function initDemo(){
+  PPLE.forEach(p=>{
+    const w=document.getElementById('dsb-'+p);w.innerHTML='';
+    for(let i=1;i<=5;i++){const b=document.createElement('button');b.className='sbtn';b.textContent=i;b.onclick=()=>dPick(p,i);w.appendChild(b);}
+  });
+  document.getElementById('dbtn-0').disabled=true;
+}
+function dPick(p,v){
+  dSc[p]=v;
+  document.querySelectorAll('#dsb-'+p+' .sbtn').forEach(b=>b.classList.toggle('sel',parseInt(b.textContent)===v));
+  document.getElementById('dcv-'+p).textContent=v;
+  document.getElementById('dch-'+p).style.display='block';
+  document.getElementById('dpc-'+p).classList.add('active');
+  document.getElementById('dbtn-0').disabled=!PPLE.every(x=>dSc[x]!==null);
+}
+function demoGo(n){
+  for(let i=0;i<=3;i++){
+    document.getElementById('dp-'+i).classList.toggle('active',i===n);
+    const s=document.getElementById('dsi-'+i);s.classList.remove('active','done');
+    if(i===n)s.classList.add('active');else if(i<n)s.classList.add('done');
+  }
+  if(n===1){PPLE.forEach(p=>{document.getElementById('dss-'+p).textContent=dSc[p];dR1[p]=dR2[p]=null;dFr[p]={};document.getElementById('dsv1-'+p).textContent='—';document.getElementById('dsv2-'+p).textContent='—';document.getElementById('dsp1-'+p).disabled=false;document.getElementById('dsp2-'+p).disabled=true;document.getElementById('dshb-'+p).style.display='none';});document.getElementById('dbtn-1').disabled=true;}
+  if(n===2)buildDemoTable();
+  if(n===3)buildDemoResult();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function buildDemoTable(){
+  const idx={alice:1,bob:2,carol:3};const cs={alice:0,bob:0,carol:0};
+  PPLE.forEach(s=>PPLE.forEach(r=>{const v=dFr[s][idx[r]];document.getElementById('dt-'+s[0]+r[0]).textContent=v;cs[r]+=v;}));
+  const tot=cs.alice+cs.bob+cs.carol;
+  document.getElementById('dt-sa').textContent=cs.alice;document.getElementById('dt-sb').textContent=cs.bob;document.getElementById('dt-sc').textContent=cs.carol;
+  document.getElementById('dpub-a').textContent=cs.alice;document.getElementById('dpub-b').textContent=cs.bob;document.getElementById('dpub-c').textContent=cs.carol;
+  document.getElementById('dpub-tot').textContent='Grand total = '+cs.alice+' + '+cs.bob+' + '+cs.carol+' = '+tot;
+}
+function buildDemoResult(){
+  const tot=dSc.alice+dSc.bob+dSc.carol;const avg=(tot/3).toFixed(2);
+  setResult('dres-e','dres-avg','dres-v','dres-d',tot,avg);
+  document.getElementById('dpriv').innerHTML="Alice's score: <span class='hl'>HIDDEN</span><br>Bob's score: <span class='hl'>HIDDEN</span><br>Lisa's score: <span class='hl'>HIDDEN</span><br><br>Maria learned: total="+tot+", avg="+avg+"<br>Can anyone reverse-engineer a score? <span class='hl'>No.</span><br>Each fragment is offset by random numbers −1000 to 1000.";
+}
+function resetDemo(){PPLE.forEach(p=>{dSc[p]=null;dR1[p]=null;dR2[p]=null;dFr[p]={};document.getElementById('dch-'+p).style.display='none';document.getElementById('dpc-'+p).classList.remove('active');});initDemo();demoGo(0);}
+
+function doSpin(mode,person,num){
+  const btnId=mode==='d'?'dsp'+num+'-'+person:(num===1?'tsp1':'tsp2');
+  const dispId=mode==='d'?'dsv'+num+'-'+person:(num===1?'tsv1':'tsv2');
+  const btn=document.getElementById(btnId);const disp=document.getElementById(dispId);
+  btn.disabled=true;
+  let ticks=0;
+  const iv=setInterval(()=>{
+    const r=Math.round(Math.random()*2000-1000);disp.textContent=r;disp.classList.remove('pop');void disp.offsetWidth;disp.classList.add('pop');ticks++;
+    if(ticks>16){clearInterval(iv);const f=Math.round(Math.random()*2000-1000);disp.textContent=f;if(mode==='d')onDSpin(person,num,f);else onTSpin(num,f);}
+  },52);
+}
+function onDSpin(p,num,v){
+  if(num===1){dR1[p]=v;document.getElementById('dsp2-'+p).disabled=false;}
+  else{dR2[p]=v;const f1=dR1[p],f2=dR2[p],f3=dSc[p]-f1-f2;dFr[p]={1:f1,2:f2,3:f3};document.getElementById('df1-'+p).textContent=f1;document.getElementById('df2-'+p).textContent=f2;document.getElementById('df3-'+p).textContent=f3;document.getElementById('dchk-'+p).textContent='✓ '+f1+'+'+f2+'+'+f3+'='+dSc[p];document.getElementById('dshb-'+p).style.display='block';document.getElementById('dbtn-1').disabled=!PPLE.every(x=>dR2[x]!==null);}
+}
+
+function initTryScore(){
+  const w=document.getElementById('tsb-you');w.innerHTML='';
+  for(let i=1;i<=5;i++){const b=document.createElement('button');b.className='sbtn';b.textContent=i;b.onclick=()=>tPick(i);w.appendChild(b);}
+  document.getElementById('tbtn-score').disabled=true;
+}
+function tPick(v){T.youScore=v;document.querySelectorAll('#tsb-you .sbtn').forEach(b=>b.classList.toggle('sel',parseInt(b.textContent)===v));document.getElementById('tcv-you').textContent=v;document.getElementById('tch-you').style.display='block';document.getElementById('tbtn-score').disabled=false;}
+function tryGoSplit(){document.getElementById('try-ss').textContent=T.youScore;T.youR1=T.youR2=null;T.youFr={};document.getElementById('tsv1').textContent='—';document.getElementById('tsv2').textContent='—';document.getElementById('tsp1').disabled=false;document.getElementById('tsp2').disabled=true;document.getElementById('tshb').style.display='none';document.getElementById('tbtn-split').disabled=true;showScreen('screen-try-split');}
+function onTSpin(num,v){
+  if(num===1){T.youR1=v;document.getElementById('tsp2').disabled=false;}
+  else{T.youR2=v;const f1=T.youR1,f2=T.youR2,f3=T.youScore-f1-f2;T.youFr={1:f1,2:f2,3:f3};document.getElementById('tf1').textContent=f1;document.getElementById('tf2').textContent=f2;document.getElementById('tf3').textContent=f3;document.getElementById('tchk').textContent='✓ '+f1+' + '+f2+' + '+f3+' = '+T.youScore;document.getElementById('tshb').style.display='block';document.getElementById('tbtn-split').disabled=false;}
+}
+function tryGoWaiting(){
+  showScreen('screen-waiting');
+  const aS=Math.floor(Math.random()*5)+1,bS=Math.floor(Math.random()*5)+1;
+  const aR1=Math.round(Math.random()*2000-1000),aR2=Math.round(Math.random()*2000-1000);
+  const bR1=Math.round(Math.random()*2000-1000),bR2=Math.round(Math.random()*2000-1000);
+  T.aScore=aS;T.aFr={1:aR1,2:aR2,3:aS-aR1-aR2};
+  T.bScore=bS;T.bFr={1:bR1,2:bR2,3:bS-bR1-bR2};
+  const bar=document.getElementById('wprog');let pct=0;
+  const iv=setInterval(()=>{pct+=2;bar.style.width=pct+'%';if(pct===30)document.getElementById('wlbl-a').textContent='Done ✓';if(pct===70)document.getElementById('wlbl-b').textContent='Done ✓';if(pct>=100){clearInterval(iv);setTimeout(buildTryShare,400);}},40);
+}
+function buildTryShare(){
+  const fa=T.aFr[3],fb=T.bFr[3],fy=T.youFr[3],cs=fa+fb+fy;
+  document.getElementById('tsh-fa').textContent=fa;document.getElementById('tsh-fb').textContent=fb;document.getElementById('tsh-fy').textContent=fy;
+  document.getElementById('tsh-cs').textContent=cs;document.getElementById('tsh-cs2').textContent=cs;
+  document.getElementById('tsh-cm').textContent=fa+' + '+fb+' + '+fy+' = '+cs;
+  showScreen('screen-try-share');
+}
+function tryGoResult(){
+  const cA=T.aFr[1]+T.bFr[1]+T.youFr[1];
+  const cB=T.aFr[2]+T.bFr[2]+T.youFr[2];
+  const cC=T.aFr[3]+T.bFr[3]+T.youFr[3];
+  const tot=cA+cB+cC;const avg=(tot/3).toFixed(2);
+  setResult('tres-e','tres-avg','tres-v','tres-d',tot,avg);
+  document.getElementById('tpriv').innerHTML="Your score: <span class='hl'>HIDDEN</span><br>Alice's score: <span class='hl'>HIDDEN</span><br>Bob's score: <span class='hl'>HIDDEN</span><br><br>You announced column sum: <span class='hl'>"+cC+"</span><br>Alice & Bob announced their sums too<br><br>Grand total = "+cA+" + "+cB+" + "+cC+" = "+tot+"<br>Average = "+tot+" ÷ 3 = "+avg;
+  showScreen('screen-try-result');
+}
+
+function setResult(eId,aId,vId,dId,tot,avg){
+  const n=parseFloat(avg);
+  document.getElementById(aId).textContent=avg;
+  let e,v,d;
+  if(n>=4.5){e='🌟';v='"Stunning — she\'ll be the star of the wedding!"';d='Unanimous love. Diana should walk in with full confidence.';}
+  else if(n>=3.5){e='✨';v='"Really lovely — a small tweak could make it perfect."';d='Strong positive feedback. Worth a quick stylist check.';}
+  else if(n>=2.5){e='🤔';v='"Nice, but maybe some adjustments before the big day."';d='Mixed feelings. There\'s still time to refine the look.';}
+  else if(n>=1.5){e='💬';v='"Honest answer: this might not be the right look."';d='The friends care enough to be honest. Try another style!';}
+  else{e='💔';v='"As your friends, we think a different style would serve you better."';d='Tough love from people who truly care. MPC made honesty possible.';}
+  document.getElementById(eId).textContent=e;document.getElementById(vId).textContent=v;document.getElementById(dId).textContent=d;
+}
+
+function pickStar(v){T.refl.stars=v;document.querySelectorAll('#q1-stars .star-btn').forEach((b,i)=>b.classList.toggle('lit',i<v));}
+function pickBin(v){T.refl.bin=v;['yes','maybe','no'].forEach(k=>document.getElementById('q2-'+k).classList.toggle('sel',k===v));}
+function toggleCheck(el){el.classList.toggle('sel');const t=el.textContent.trim();const i=T.refl.checks.indexOf(t);if(i===-1)T.refl.checks.push(t);else T.refl.checks.splice(i,1);}
+function submitReflection(){
+  T.refl.text=document.getElementById('q4-text').value;
+  const avg=((T.aScore+T.bScore+T.youScore)/3).toFixed(2);
+  const sl=T.refl.stars?'⭐'.repeat(T.refl.stars)+' ('+T.refl.stars+'/5)':'Not answered';
+  const bl=T.refl.bin?{yes:"Yes, I'd trust it",maybe:'Maybe, with more info',no:'No, not comfortable'}[T.refl.bin]:'Not answered';
+  document.getElementById('ty-lines').innerHTML='Your score: <span class="hl">'+T.youScore+' / 5</span><br>Diana\'s average: <span class="hl">'+avg+' / 5</span><br><br>Security feeling: <span class="hl">'+sl+'</span><br>Would use in real life: <span class="hl">'+bl+'</span>'+(T.refl.text?'<br>Comment: <span class="hl">"'+T.refl.text.slice(0,60)+(T.refl.text.length>60?'…':'')+'"</span>':'');
+  showScreen('screen-thanks');
+}
+function startTry(){initTryScore();showScreen('screen-try-score');}
+function fullReset(){PPLE.forEach(p=>{dSc[p]=null;dR1[p]=null;dR2[p]=null;dFr[p]={};document.getElementById('dch-'+p).style.display='none';document.getElementById('dpc-'+p).classList.remove('active');});Object.assign(T,{youScore:null,youR1:null,youR2:null,youFr:{},aScore:null,aFr:{},bScore:null,bFr:{},refl:{stars:null,bin:null,checks:[],text:''}});initDemo();demoGo(0);showScreen('screen-demo');}
+initDemo();
+</script>
+</body>
+</html>
