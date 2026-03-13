@@ -200,9 +200,6 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   </div>
   <div class="phase-title">Maria's honest average</div>
   <p id="tres-desc" style="font-family:'Lora',serif;font-size:20px;line-height:1.7;color:var(--ink);margin-top:12px;margin-bottom:0;">The three column sums add up and are divided by 3, so Maria gets the score of —.</p>
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;margin-top:28px;text-align:center;font-family:'Lora',serif;font-style:italic;font-size:15px;line-height:1.8;color:var(--ink)">
-    Thank you for completing the tutorial. Now, please return to the evaluation form.
-  </div>
   <div class="transition-card" style="margin-top:24px">
     <div class="tc-title">See how it works <span>behind the scenes</span></div>
     <div class="tc-body">Now watch the full protocol from all three friends' perspectives — and see how the same average emerges from the raw scores.</div>
@@ -311,6 +308,9 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
       <span style="color:var(--gold);font-weight:700" id="dpub-raw"></span>
     </div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-top:16px;font-family:'Lora',serif;font-size:14px;font-style:italic;line-height:1.75;color:var(--ink);display:none" id="d-result-summary"></div>
+    <div id="d-thankyou" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;margin-top:16px;text-align:center;font-family:'Lora',serif;font-style:italic;font-size:15px;line-height:1.8;color:var(--ink)">
+      Thank you for completing the tutorial. Now, please return to the evaluation form.
+    </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="demoGo(1)">← Back</button>
       <button class="btn btn-ghost" onclick="resetDemo()">↺ Redo the demo</button>
@@ -398,6 +398,7 @@ function buildDemoTable(){
   const rs=document.getElementById('d-result-summary');
   rs.textContent='The protocol is done and Maria got an average score of '+avg+' while none of her friends revealed their true score to anyone.';
   rs.style.display='block';
+  document.getElementById('d-thankyou').style.display='block';
 }
 function resetDemo(){
   PPLE.forEach(p=>{
@@ -409,6 +410,7 @@ function resetDemo(){
   document.getElementById('dpub-tot').textContent='Total sum = —';
   document.getElementById('dpub-raw').textContent='';
   document.getElementById('d-result-summary').style.display='none';
+  document.getElementById('d-thankyou').style.display='none';
   initDemo();demoGo(0);
 }
 function startDemo(){initDemo();showScreen('screen-demo');}
