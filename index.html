@@ -70,9 +70,9 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 .stbl tr:last-child td{border-bottom:none;}
 .stbl .sum-row td{background:var(--surface2);font-weight:700;color:var(--ink);}
 .transition-card{background:var(--ink);color:#fff;border-radius:20px;padding:36px 28px;text-align:center;margin-top:24px;position:relative;overflow:hidden;}
-.transition-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,color-mix(in srgb,var(--you-c) 18%,transparent),transparent 60%);pointer-events:none;}
+.transition-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,color-mix(in srgb,var(--alice-c) 18%,transparent),transparent 60%);pointer-events:none;}
 .tc-title{font-size:28px;font-weight:800;margin-bottom:10px;}
-.tc-title span{color:color-mix(in srgb,var(--you-c) 80%,#fff);}
+.tc-title span{color:color-mix(in srgb,var(--alice-c) 80%,#fff);}
 .tc-body{font-family:'Lora',serif;font-style:italic;font-size:14px;color:#aaa;line-height:1.75;max-width:440px;margin:0 auto 24px;}
 .try-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0;}
 @media(max-width:560px){.try-grid{grid-template-columns:1fr;}}
@@ -97,16 +97,13 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 <body>
 <div class="app">
 
-<!-- SCREEN: DEMO -->
-<div id="screen-demo" class="screen active">
-  <div class="top-bar">
-    <div class="top-bar-title">Secure Multi-party Computation Model</div>
-    <span class="mode-badge demo">Demo</span>
-  </div>
+<!-- ===================== SCREEN: TRY SCORE (first) ===================== -->
+<div id="screen-try-score" class="screen active">
+  <div class="top-bar"><div class="top-bar-title">Secure Multi-party Computation Model</div><span class="mode-badge try">Try Yourself</span></div>
 
   <div style="margin-bottom:20px;padding:18px 22px;border:1px solid var(--border);border-radius:14px;background:var(--surface);">
     <div style="font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Intro to MPC</div>
-    <p style="font-family:'Lora',serif;font-size:14px;line-height:1.75;color:var(--ink);">Secure Multi-party Computation (MPC) allows multiple parties to jointly compute a result over their private inputs without anyone revealing their individual data to the others. In this demo, you will see how three friends can calculate an honest average score while keeping each person's rating completely secret.</p>
+    <p style="font-family:'Lora',serif;font-size:14px;line-height:1.75;color:var(--ink);">Secure Multi-party Computation (MPC) allows multiple parties to jointly compute a result over their private inputs without anyone revealing their individual data to the others. In this tutorial, you will go through the protocol yourself before watching a full demonstration.</p>
   </div>
 
   <div class="story">
@@ -114,95 +111,6 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
     <p>Maria is getting married in a week and just got a new hairstyle. She asks her friends Alice, Bob, and Lisa to rate it honestly from 1 to 5. She needs honest opinions, but she is scared that if each friend tells her their opinion directly, they will overestimate their score because of friendship pressure. At the same time, she does not want her friends to discuss her appearance and share their scores with each other. She applies the MPC protocol to reveal the average score for her hairstyle so that no individual knows the scores of others.</p>
   </div>
 
-  <div class="steps">
-    <div class="si active" id="dsi-0"><div class="si-num">01</div><div class="si-lbl">Score</div></div>
-    <div class="si" id="dsi-1"><div class="si-num">02</div><div class="si-lbl">Split</div></div>
-    <div class="si" id="dsi-2"><div class="si-num">03</div><div class="si-lbl">Share & Reveal</div></div>
-  </div>
-
-  <!-- D0: scores -->
-  <div id="dp-0" class="phase active">
-    <div class="phase-title">Step 1 — Each friend picks a secret score</div>
-    <p class="phase-desc">Try to evaluate the hairstyle from each friend's perspective. Remember, it is a secret score that no one shares with others.</p>
-    <div class="pgrid">
-      <div class="pcard alice" id="dpc-alice"><div class="pcard-head"><div class="pcard-name">Alice</div></div><div class="sc-lbl">Rating</div><div class="sc-btns" id="dsb-alice"></div><div class="mbox" id="dch-alice" style="display:none">Chosen: <span class="hl" id="dcv-alice">—</span> / 5</div></div>
-      <div class="pcard bob" id="dpc-bob"><div class="pcard-head"><div class="pcard-name">Bob</div></div><div class="sc-lbl">Rating</div><div class="sc-btns" id="dsb-bob"></div><div class="mbox" id="dch-bob" style="display:none">Chosen: <span class="hl" id="dcv-bob">—</span> / 5</div></div>
-      <div class="pcard you" id="dpc-carol"><div class="pcard-head"><div class="pcard-name">Lisa</div></div><div class="sc-lbl">Rating</div><div class="sc-btns" id="dsb-carol"></div><div class="mbox" id="dch-carol" style="display:none">Chosen: <span class="hl" id="dcv-carol">—</span> / 5</div></div>
-    </div>
-    <div class="btn-row"><button class="btn btn-primary" id="dbtn-0" disabled onclick="demoGo(1)">Next step</button></div>
-  </div>
-
-  <!-- D1: split -->
-  <div id="dp-1" class="phase">
-    <div class="phase-title">Step 2 — Split each score into 3 random bits</div>
-    <p class="phase-desc">Each score is split into three values that sum to the actual score. The additional numbers create noise — values that do not reveal the actual score on their own, but can be used to compute the final result.</p>
-    <p class="phase-desc" style="color:var(--ink);font-weight:500;margin-top:-10px;">Spin a randomizing wheel that picks a noise number from -1000 to 1000. Each spin results in a random number. Then, calculate the third number by subtracting those random numbers from the actual score.</p>
-    <div class="ibox">Random Number 1 + Random Number 2 + Noise Difference = Actual Score</div>
-    <div class="pgrid">
-      <div class="pcard alice">
-        <div class="pcard-head"><div class="pcard-name">Alice</div></div>
-        <div class="mbox">Score: <span class="hl" id="dss-alice">—</span></div>
-        <div class="spin-row"><button class="spin-btn" id="dsp1-alice" onclick="doSpin('d','alice',1)">Spin 1</button><div class="spin-val" id="dsv1-alice">—</div></div>
-        <div class="spin-row"><button class="spin-btn" id="dsp2-alice" onclick="doSpin('d','alice',2)" disabled>Spin 2</button><div class="spin-val" id="dsv2-alice">—</div></div>
-        <div class="mbox" id="dshb-alice" style="display:none;margin-top:8px;line-height:2">n<sub>1</sub>=<span class="hl" id="df1-alice">—</span> n<sub>2</sub>=<span class="hl" id="df2-alice">—</span> n<sub>3</sub>=<span class="hl" id="df3-alice">—</span><br><span class="hl2" style="font-size:11px" id="dchk-alice"></span></div>
-      </div>
-      <div class="pcard bob" style="--pc:var(--alice-c)">
-        <div class="pcard-head"><div class="pcard-name">Bob</div></div>
-        <div class="mbox">Score: <span class="hl" id="dss-bob">—</span></div>
-        <div class="spin-row"><button class="spin-btn" id="dsp1-bob" onclick="doSpin('d','bob',1)">Spin 1</button><div class="spin-val" id="dsv1-bob">—</div></div>
-        <div class="spin-row"><button class="spin-btn" id="dsp2-bob" onclick="doSpin('d','bob',2)" disabled>Spin 2</button><div class="spin-val" id="dsv2-bob">—</div></div>
-        <div class="mbox" id="dshb-bob" style="display:none;margin-top:8px;line-height:2">n<sub>1</sub>=<span class="hl" id="df1-bob">—</span> n<sub>2</sub>=<span class="hl" id="df2-bob">—</span> n<sub>3</sub>=<span class="hl" id="df3-bob">—</span><br><span class="hl2" style="font-size:11px" id="dchk-bob"></span></div>
-      </div>
-      <div class="pcard you" style="--pc:var(--alice-c)">
-        <div class="pcard-head"><div class="pcard-name">Lisa</div></div>
-        <div class="mbox">Score: <span class="hl" id="dss-carol">—</span></div>
-        <div class="spin-row"><button class="spin-btn" id="dsp1-carol" onclick="doSpin('d','carol',1)">Spin 1</button><div class="spin-val" id="dsv1-carol">—</div></div>
-        <div class="spin-row"><button class="spin-btn" id="dsp2-carol" onclick="doSpin('d','carol',2)" disabled>Spin 2</button><div class="spin-val" id="dsv2-carol">—</div></div>
-        <div class="mbox" id="dshb-carol" style="display:none;margin-top:8px;line-height:2">n<sub>1</sub>=<span class="hl" id="df1-carol">—</span> n<sub>2</sub>=<span class="hl" id="df2-carol">—</span> n<sub>3</sub>=<span class="hl" id="df3-carol">—</span><br><span class="hl2" style="font-size:11px" id="dchk-carol"></span></div>
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="demoGo(0)">← Back</button>
-      <button class="btn btn-primary" id="dbtn-1" disabled onclick="demoGo(2)">Next step</button>
-    </div>
-  </div>
-
-  <!-- D2: share + reveal -->
-  <div id="dp-2" class="phase">
-    <div class="phase-title">Step 3 — Each person gets one number from everyone</div>
-    <p class="phase-desc">Each person gets 1 number from every friend, including themselves. They compute the sum of their 3 numbers and send it privately to Maria. Only Maria adds up all three sums to get the final average — so no individual ever sees another person's column sum.</p>
-    <table class="stbl">
-      <thead><tr><th>Sends ↓ / Gets →</th><th style="color:#f0b49a">Alice</th><th style="color:#9ab4f0">Bob</th><th style="color:#c4a0f0">Lisa</th></tr></thead>
-      <tbody>
-        <tr><td style="color:var(--alice-c);font-weight:700">From Alice</td><td id="dt-aa">—</td><td id="dt-ab">—</td><td id="dt-ac">—</td></tr>
-        <tr><td style="color:var(--bob-c);font-weight:700">From Bob</td><td id="dt-ba">—</td><td id="dt-bb">—</td><td id="dt-bc">—</td></tr>
-        <tr><td style="color:var(--you-c);font-weight:700">From Lisa</td><td id="dt-ca">—</td><td id="dt-cb">—</td><td id="dt-cc">—</td></tr>
-        <tr class="sum-row"><td>Column Sum</td><td id="dt-sa">—</td><td id="dt-sb">—</td><td id="dt-sc">—</td></tr>
-      </tbody>
-    </table>
-    <div class="mbox" style="font-size:13px;line-height:2.3">
-      Alice sends Maria: <span style="color:var(--alice-c);font-weight:700" id="dpub-a">—</span><br>
-      Bob sends Maria: <span style="color:var(--bob-c);font-weight:700" id="dpub-b">—</span><br>
-      Lisa sends Maria: <span style="color:var(--you-c);font-weight:700" id="dpub-c">—</span><br>
-      <span style="color:var(--ink);font-weight:700" id="dpub-tot">Total sum = —</span><br>
-      <span style="color:var(--ink);font-weight:700" id="dpub-avg"></span>
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-top:16px;font-family:'Lora',serif;font-size:14px;font-style:italic;line-height:1.75;color:var(--ink);display:none" id="d-result-summary"></div>
-    <div class="transition-card" style="margin-top:16px">
-      <div class="tc-title">Now it's <span>your turn</span></div>
-      <div class="tc-body">You just watched the full protocol. Now experience it yourself — pick your own score, spin your own randomizer, and see exactly what you share with Alice and Bob.</div>
-      <button class="btn btn-you" onclick="startTry()">Try it yourself</button>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="demoGo(1)">← Back</button>
-      <button class="btn btn-ghost" onclick="resetDemo()">↺ Redo the demo</button>
-    </div>
-  </div>
-</div>
-
-<!-- SCREEN: TRY SCORE -->
-<div id="screen-try-score" class="screen">
-  <div class="top-bar"><div class="top-bar-title">Secure Multi-party Computation Model</div><span class="mode-badge try">Try Yourself</span></div>
   <div class="steps">
     <div class="si active"><div class="si-num">01</div><div class="si-lbl">Your Score</div></div>
     <div class="si"><div class="si-num">02</div><div class="si-lbl">Your Split</div></div>
@@ -295,6 +203,119 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;margin-top:28px;text-align:center;font-family:'Lora',serif;font-style:italic;font-size:15px;line-height:1.8;color:var(--ink)">
     Thank you for completing the tutorial. Now, please return to the evaluation form.
   </div>
+  <div class="transition-card" style="margin-top:24px">
+    <div class="tc-title">See how it works <span>behind the scenes</span></div>
+    <div class="tc-body">Now watch the full protocol from all three friends' perspectives — and see how the same average emerges from the raw scores.</div>
+    <button class="btn btn-primary" onclick="startDemo()">Watch the full demo</button>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: DEMO (second) ===================== -->
+<div id="screen-demo" class="screen">
+  <div class="top-bar">
+    <div class="top-bar-title">Secure Multi-party Computation Model</div>
+    <span class="mode-badge demo">Demo</span>
+  </div>
+
+  <div style="margin-bottom:20px;padding:18px 22px;border:1px solid var(--border);border-radius:14px;background:var(--surface);">
+    <div style="font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Full Protocol Demo</div>
+    <p style="font-family:'Lora',serif;font-size:14px;line-height:1.75;color:var(--ink);">Now you will see the complete protocol from all three friends' perspectives simultaneously. You control Alice, Bob, and Lisa — and at the end you can verify that the average computed from random fragments matches the average computed directly from the raw scores.</p>
+  </div>
+
+  <div class="story">
+    <div class="story-eye">The Scenario</div>
+    <p>Maria is getting married in a week and just got a new hairstyle. She asks her friends Alice, Bob, and Lisa to rate it honestly from 1 to 5. She needs honest opinions, but she is scared that if each friend tells her their opinion directly, they will overestimate their score because of friendship pressure. At the same time, she does not want her friends to discuss her appearance and share their scores with each other. She applies the MPC protocol to reveal the average score for her hairstyle so that no individual knows the scores of others.</p>
+  </div>
+
+  <div class="steps">
+    <div class="si active" id="dsi-0"><div class="si-num">01</div><div class="si-lbl">Score</div></div>
+    <div class="si" id="dsi-1"><div class="si-num">02</div><div class="si-lbl">Split</div></div>
+    <div class="si" id="dsi-2"><div class="si-num">03</div><div class="si-lbl">Share & Reveal</div></div>
+  </div>
+
+  <!-- D0: scores -->
+  <div id="dp-0" class="phase active">
+    <div class="phase-title">Step 1 — Each friend picks a secret score</div>
+    <p class="phase-desc">Try to evaluate the hairstyle from each friend's perspective. Remember, it is a secret score that no one shares with others.</p>
+    <div class="pgrid">
+      <div class="pcard alice" id="dpc-alice"><div class="pcard-head"><div class="pcard-name">Alice</div></div><div class="sc-lbl">Rating</div><div class="sc-btns" id="dsb-alice"></div><div class="mbox" id="dch-alice" style="display:none">Chosen: <span class="hl" id="dcv-alice">—</span> / 5</div></div>
+      <div class="pcard bob" id="dpc-bob"><div class="pcard-head"><div class="pcard-name">Bob</div></div><div class="sc-lbl">Rating</div><div class="sc-btns" id="dsb-bob"></div><div class="mbox" id="dch-bob" style="display:none">Chosen: <span class="hl" id="dcv-bob">—</span> / 5</div></div>
+      <div class="pcard you" id="dpc-carol"><div class="pcard-head"><div class="pcard-name">Lisa</div></div><div class="sc-lbl">Rating</div><div class="sc-btns" id="dsb-carol"></div><div class="mbox" id="dch-carol" style="display:none">Chosen: <span class="hl" id="dcv-carol">—</span> / 5</div></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" id="dbtn-0" disabled onclick="demoGo(1)">Next step</button></div>
+  </div>
+
+  <!-- D1: split -->
+  <div id="dp-1" class="phase">
+    <div class="phase-title">Step 2 — Split each score into 3 random fragments</div>
+    <p class="phase-desc">Each score is split into three values that sum to the actual score. The additional numbers create noise — values that do not reveal the actual score on their own, but can be used to compute the final result.</p>
+    <p class="phase-desc" style="color:var(--ink);font-weight:500;margin-top:-10px;">Spin a randomizing wheel that picks a noise number from -1000 to 1000. Each spin results in a random number. Then, calculate the third number by subtracting those random numbers from the actual score.</p>
+    <div class="ibox">Random Number 1 + Random Number 2 + Noise Difference = Actual Score</div>
+    <div class="pgrid">
+      <div class="pcard alice">
+        <div class="pcard-head"><div class="pcard-name">Alice</div></div>
+        <div class="mbox">Score: <span class="hl" id="dss-alice">—</span></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp1-alice" onclick="doSpin('d','alice',1)">Spin 1</button><div class="spin-val" id="dsv1-alice">—</div></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp2-alice" onclick="doSpin('d','alice',2)" disabled>Spin 2</button><div class="spin-val" id="dsv2-alice">—</div></div>
+        <div class="mbox" id="dshb-alice" style="display:none;margin-top:8px;line-height:2">
+          n<sub>1</sub>=<span class="hl" id="df1-alice">—</span> &nbsp;n<sub>2</sub>=<span class="hl" id="df2-alice">—</span> &nbsp;n<sub>3</sub>=<span class="hl" id="df3-alice">—</span><br>
+          <span class="hl2" style="font-size:11px" id="dchk-alice"></span>
+        </div>
+      </div>
+      <div class="pcard bob" style="--pc:var(--alice-c)">
+        <div class="pcard-head"><div class="pcard-name">Bob</div></div>
+        <div class="mbox">Score: <span class="hl" id="dss-bob">—</span></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp1-bob" onclick="doSpin('d','bob',1)">Spin 1</button><div class="spin-val" id="dsv1-bob">—</div></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp2-bob" onclick="doSpin('d','bob',2)" disabled>Spin 2</button><div class="spin-val" id="dsv2-bob">—</div></div>
+        <div class="mbox" id="dshb-bob" style="display:none;margin-top:8px;line-height:2">
+          n<sub>1</sub>=<span class="hl" id="df1-bob">—</span> &nbsp;n<sub>2</sub>=<span class="hl" id="df2-bob">—</span> &nbsp;n<sub>3</sub>=<span class="hl" id="df3-bob">—</span><br>
+          <span class="hl2" style="font-size:11px" id="dchk-bob"></span>
+        </div>
+      </div>
+      <div class="pcard you" style="--pc:var(--alice-c)">
+        <div class="pcard-head"><div class="pcard-name">Lisa</div></div>
+        <div class="mbox">Score: <span class="hl" id="dss-carol">—</span></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp1-carol" onclick="doSpin('d','carol',1)">Spin 1</button><div class="spin-val" id="dsv1-carol">—</div></div>
+        <div class="spin-row"><button class="spin-btn" id="dsp2-carol" onclick="doSpin('d','carol',2)" disabled>Spin 2</button><div class="spin-val" id="dsv2-carol">—</div></div>
+        <div class="mbox" id="dshb-carol" style="display:none;margin-top:8px;line-height:2">
+          n<sub>1</sub>=<span class="hl" id="df1-carol">—</span> &nbsp;n<sub>2</sub>=<span class="hl" id="df2-carol">—</span> &nbsp;n<sub>3</sub>=<span class="hl" id="df3-carol">—</span><br>
+          <span class="hl2" style="font-size:11px" id="dchk-carol"></span>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="demoGo(0)">← Back</button>
+      <button class="btn btn-primary" id="dbtn-1" disabled onclick="demoGo(2)">Next step</button>
+    </div>
+  </div>
+
+  <!-- D2: share + reveal -->
+  <div id="dp-2" class="phase">
+    <div class="phase-title">Step 3 — Each person gets one number from everyone</div>
+    <p class="phase-desc">Each person gets 1 number from every friend, including themselves. They compute the sum of their 3 numbers and send it privately to Maria. Only Maria adds up all three sums to get the final average — so no individual ever sees another person's column sum.</p>
+    <table class="stbl">
+      <thead><tr><th>Sends ↓ / Gets →</th><th style="color:#f0b49a">Alice</th><th style="color:#9ab4f0">Bob</th><th style="color:#c4a0f0">Lisa</th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--alice-c);font-weight:700">From Alice</td><td id="dt-aa">—</td><td id="dt-ab">—</td><td id="dt-ac">—</td></tr>
+        <tr><td style="color:var(--bob-c);font-weight:700">From Bob</td><td id="dt-ba">—</td><td id="dt-bb">—</td><td id="dt-bc">—</td></tr>
+        <tr><td style="color:var(--you-c);font-weight:700">From Lisa</td><td id="dt-ca">—</td><td id="dt-cb">—</td><td id="dt-cc">—</td></tr>
+        <tr class="sum-row"><td>Column Sum</td><td id="dt-sa">—</td><td id="dt-sb">—</td><td id="dt-sc">—</td></tr>
+      </tbody>
+    </table>
+    <div class="mbox" style="font-size:13px;line-height:2.3">
+      Alice sends Maria: <span style="color:var(--alice-c);font-weight:700" id="dpub-a">—</span><br>
+      Bob sends Maria: <span style="color:var(--bob-c);font-weight:700" id="dpub-b">—</span><br>
+      Lisa sends Maria: <span style="color:var(--you-c);font-weight:700" id="dpub-c">—</span><br>
+      <span style="color:var(--ink);font-weight:700" id="dpub-tot">Total sum = —</span><br>
+      <span style="color:var(--ink);font-weight:700" id="dpub-avg"></span><br>
+      <span style="color:var(--gold);font-weight:700" id="dpub-raw"></span>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-top:16px;font-family:'Lora',serif;font-size:14px;font-style:italic;line-height:1.75;color:var(--ink);display:none" id="d-result-summary"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="demoGo(1)">← Back</button>
+      <button class="btn btn-ghost" onclick="resetDemo()">↺ Redo the demo</button>
+    </div>
+  </div>
 </div>
 
 </div>
@@ -312,6 +333,7 @@ function showScreen(id){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+// ── DEMO ──────────────────────────────────────────────
 function initDemo(){
   PPLE.forEach(p=>{
     const w=document.getElementById('dsb-'+p);w.innerHTML='';
@@ -369,6 +391,10 @@ function buildDemoTable(){
   document.getElementById('dpub-tot').textContent='Total sum = '+cs.alice+' + '+cs.bob+' + '+cs.carol+' = '+tot;
   const avg=(tot/3).toFixed(2);
   document.getElementById('dpub-avg').textContent='Average score = Total sum / 3 = '+tot+' / 3 = '+avg;
+  // raw average from original scores
+  const rawTot=dSc.alice+dSc.bob+dSc.carol;
+  const rawAvg=(rawTot/3).toFixed(2);
+  document.getElementById('dpub-raw').textContent='Raw average = ('+dSc.alice+' + '+dSc.bob+' + '+dSc.carol+') / 3 = '+rawTot+' / 3 = '+rawAvg;
   const rs=document.getElementById('d-result-summary');
   rs.textContent='The protocol is done and Maria got an average score of '+avg+' while none of her friends revealed their true score to anyone.';
   rs.style.display='block';
@@ -381,10 +407,13 @@ function resetDemo(){
   });
   document.getElementById('dpub-avg').textContent='';
   document.getElementById('dpub-tot').textContent='Total sum = —';
+  document.getElementById('dpub-raw').textContent='';
   document.getElementById('d-result-summary').style.display='none';
   initDemo();demoGo(0);
 }
+function startDemo(){initDemo();showScreen('screen-demo');}
 
+// ── SPIN (shared) ─────────────────────────────────────
 function doSpin(mode,person,num){
   const btnId=mode==='d'?'dsp'+num+'-'+person:(num===1?'tsp1':'tsp2');
   const dispId=mode==='d'?'dsv'+num+'-'+person:(num===1?'tsv1':'tsv2');
@@ -407,12 +436,14 @@ function onDSpin(p,num,v){
     document.getElementById('df1-'+p).textContent=f1;
     document.getElementById('df2-'+p).textContent=f2;
     document.getElementById('df3-'+p).textContent=f3;
-    document.getElementById('dchk-'+p).textContent='n1='+f1+', n2='+f2+', n3='+f3;
+    // sum line: n1 + n2 + n3 = score
+    document.getElementById('dchk-'+p).textContent=f1+' + '+f2+' + '+f3+' = '+dSc[p];
     document.getElementById('dshb-'+p).style.display='block';
     document.getElementById('dbtn-1').disabled=!PPLE.every(x=>dR2[x]!==null);
   }
 }
 
+// ── TRY YOURSELF ──────────────────────────────────────
 function initTryScore(){
   const w=document.getElementById('tsb-you');w.innerHTML='';
   for(let i=1;i<=5;i++){const b=document.createElement('button');b.className='sbtn';b.textContent=i;b.onclick=()=>tPick(i);w.appendChild(b);}
@@ -445,7 +476,8 @@ function onTSpin(num,v){
     document.getElementById('tf1').textContent=f1;
     document.getElementById('tf2').textContent=f2;
     document.getElementById('tf3').textContent=f3;
-    document.getElementById('tchk').textContent='n1='+f1+', n2='+f2+', n3='+f3;
+    // sum line: n1 + n2 + n3 = score
+    document.getElementById('tchk').textContent=f1+' + '+f2+' + '+f3+' = '+T.youScore;
     document.getElementById('tshb').style.display='block';
     document.getElementById('tbtn-split').disabled=false;
   }
@@ -477,9 +509,9 @@ function tryGoResult(){
   document.getElementById('tres-desc').textContent='The three column sums add up and are divided by 3, so Maria gets the score of '+avg+'.';
   showScreen('screen-try-result');
 }
-function startTry(){initTryScore();showScreen('screen-try-score');}
 
-initDemo();
+// ── INIT ──────────────────────────────────────────────
+initTryScore();
 </script>
 </body>
 </html>
